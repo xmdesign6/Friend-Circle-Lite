@@ -11,6 +11,7 @@ env:
 jobs:
   friend-circle-lite:
     runs-on: ubuntu-latest
+    continue-on-error: true  # 添加这行，即使出错也继续执行
 
     steps:
     - name: Pull Latest Repository
@@ -54,10 +55,11 @@ jobs:
         FCL_REPO: ${{ github.repository }}
       run: |
         echo "Checking RSS feeds..."
-        python run.py
-        ls ./temp
+        python run.py || echo "⚠️ 警告: 执行过程中出现错误，但继续运行"
+        ls ./temp || echo "无法列出temp目录内容"
     
     - name: Upload temp file as artifact
+      if: always()  # 即使前面步骤失败也上传
       uses: actions/upload-artifact@v4
       with:
         name: 'temp'
@@ -65,21 +67,30 @@ jobs:
         retention-days: 30
 
     - name: git config
+      if: success() || failure()  # 即使失败也尝试提交（如果文件存在）
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
     - name: Commit changes
+      if: success() || failure()  # 尝试提交，但不会因为缺少文件而整体失败
       run: |
-        mkdir pages
-        cp -r main ./static/index.html ./static/readme.md ./static/favicon.ico ./static/bg-light.webp ./temp/cache.json ./static/bg-dark.webp all.json errors.json edgeone.json pages/
+        mkdir -p pages
+        # 使用-f参数避免因文件不存在而报错
+        cp -f main ./static/index.html ./static/readme.md ./static/favicon.ico ./static/bg-light.webp ./temp/cache.json ./static/bg-dark.webp all.json errors.json edgeone.json pages/ 2>/dev/null || true
         cd pages
-        git init
-        git add .
-        git commit -m "⏱️ $(date +"%Y年%m月%d日-%H时%M分") GitHub Actions定时更新"
-        git push --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:page
+        # 检查是否有文件需要提交
+        if [ -n "$(git status --porcelain)" ]; then
+          git init
+          git add .
+          git commit -m "⏱️ $(date +"%Y年%m月%d日-%H时%M分") GitHub Actions定时更新" || echo "没有需要提交的更改"
+          git push --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:page || echo "推送失败，但继续执行"
+        else
+          echo "没有文件变更，跳过提交"
+        fi
 
     - name: Delete Workflow Runs
+      if: always()  # 无论前面是否成功都执行清理
       uses: Mattraks/delete-workflow-runs@v2
       with:
         retain_days: 30

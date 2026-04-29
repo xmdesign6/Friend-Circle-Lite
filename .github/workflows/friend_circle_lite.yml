@@ -72,12 +72,14 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-    - name: Commit changes
+   - name: Commit changes
       if: success() || failure()  # 尝试提交，但不会因为缺少文件而整体失败
       run: |
         mkdir -p pages
-        # 使用-f参数避免因文件不存在而报错
-        cp -f main/* ./static/index.html ./static/readme.md ./static/favicon.ico ./static/bg-light.webp ./temp/cache.json ./static/bg-dark.webp all.json errors.json edgeone.json pages/ 2>/dev/null || true
+        # 复制 main 整个文件夹到 pages 目录
+        cp -rf main pages/ 2>/dev/null || true
+        # 复制其他文件到 pages 目录
+        cp -f ./static/index.html ./static/readme.md ./static/favicon.ico ./static/bg-light.webp ./temp/cache.json ./static/bg-dark.webp all.json errors.json edgeone.json pages/ 2>/dev/null || true
         cd pages
         # 检查是否有文件需要提交
         if [ -n "$(git status --porcelain)" ]; then

@@ -77,7 +77,7 @@ jobs:
       run: |
         mkdir -p pages
         # 使用-f参数避免因文件不存在而报错
-        cp -f main ./static/index.html ./static/readme.md ./static/favicon.ico ./static/bg-light.webp ./temp/cache.json ./static/bg-dark.webp all.json errors.json edgeone.json pages/ 2>/dev/null || true
+        cp -f main/* ./static/index.html ./static/readme.md ./static/favicon.ico ./static/bg-light.webp ./temp/cache.json ./static/bg-dark.webp all.json errors.json edgeone.json pages/ 2>/dev/null || true
         cd pages
         # 检查是否有文件需要提交
         if [ -n "$(git status --porcelain)" ]; then

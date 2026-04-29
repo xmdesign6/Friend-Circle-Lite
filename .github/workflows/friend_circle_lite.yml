@@ -72,7 +72,7 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-   - name: Commit changes
+    - name: Commit changes
       if: success() || failure()  # 尝试提交，但不会因为缺少文件而整体失败
       run: |
         mkdir -p pages
